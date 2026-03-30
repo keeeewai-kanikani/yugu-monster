@@ -7,5 +7,60 @@
 </head>
 <body>
     <a>マイページ</a>
+    <div id="result"></div>
+    <script>
+    const SECRET = 'yugu2024';
+
+    async function getSig(r, p) {
+        const msg = `${r}:${p}:${SECRET}`;
+        const buf = new TextEncoder().encode(msg);
+        const hash = await crypto.subtle.digest('SHA-256', buf);
+        return Array.from(new Uint8Array(hash))
+            .map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 8);
+    }
+
+    async function verify() {
+        const params = new URLSearchParams(location.search);
+        const r = params.get('r');
+        const p = params.get('p');
+        const sig = params.get('sig');
+
+        // 署名検証
+        const expected = await getSig(r, p);
+        if (sig !== expected) {
+            showError('不正なスタンプです');
+            return;
+        }
+
+        // 将来サーバー化するときはここだけ差し替える
+        await saveStamp(r, p);
+    }
+
+    // ★ここを将来 fetch('/api/stamp', ...) に置き換えるだけ
+    async function saveStamp(r, p) {
+        const now = Date.now();
+        const key = `stamp_${r}_${p}`;
+        const last = localStorage.getItem(key);
+
+        if (last && now - parseInt(last) < 3600 * 1000) {
+            showError('このスタンプはもう記録済みです（1時間以内）');
+            return;
+        }
+
+        localStorage.setItem(key, now);
+        showSuccess(r, p);
+    }
+
+    function showError(msg) {
+        document.getElementById('result').innerHTML = `❌ ${msg}`;
+    }
+
+    function showSuccess(r, p) {
+        document.getElementById('result').innerHTML = `🎉 公園${p}のスタンプをゲット！`;
+    }
+
+    verify();
+</script>
 </body>
+
 </html>
