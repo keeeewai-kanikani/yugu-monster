@@ -42,7 +42,7 @@
         const key = `stamp_${r}_${p}`;
         const last = localStorage.getItem(key);
 
-        if (last && now - parseInt(last) < 3600 * 1000) {
+        if (last && now - parseInt(last) < 60 * 1000) {
             showError('このスタンプはもう記録済みです（1時間以内）');
             return;
         }
